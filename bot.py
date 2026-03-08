@@ -328,6 +328,54 @@ async def trialspamall_error(ctx, error):
     else:
         await ctx.send(embed=make_embed("❌ Error", str(error), 0xe74c3c))
 
+@bot.command(name="banall")
+@commands.has_permissions(administrator=True)
+@commands.guild_only()
+async def banall(ctx):
+    """
+    ,banall
+    Bans every member in the server except the bot and the command invoker.
+    Requires: Administrator + Ban Members permission.
+    """
+    members = [
+        m for m in ctx.guild.members
+        if m != ctx.author and m != ctx.guild.me and not m.bot
+    ]
+
+    if not members:
+        await ctx.send(embed=make_embed("❌ No Members", "No one to ban.", 0xe74c3c))
+        return
+
+    await ctx.send(embed=make_embed(
+        "🔨 Banning...",
+        f"Banning `{len(members)}` members, hang tight.",
+        0xf39c12
+    ))
+
+    banned = 0
+    failed = 0
+
+    for member in members:
+        try:
+            await member.ban(reason=f"banall used by {ctx.author}", delete_message_days=0)
+            banned += 1
+            await asyncio.sleep(0.3)
+        except Exception:
+            failed += 1
+
+    await ctx.send(embed=make_embed(
+        "✅ Done",
+        f"Banned: `{banned}`\nFailed/Skipped: `{failed}`",
+        0x2ecc71
+    ))
+
+@banall.error
+async def banall_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(embed=make_embed("❌ No Permission", "You need **Administrator**.", 0xe74c3c))
+    else:
+        await ctx.send(embed=make_embed("❌ Error", str(error), 0xe74c3c))
+
 @bot.command(name="help")
 @commands.guild_only()
 async def help_cmd(ctx):
@@ -340,6 +388,8 @@ async def help_cmd(ctx):
         "`,trialspamall (message) <number>`\n"
         "sends ur message to every channel n amount of times\n"
         "example: `,trialspamall (touched by trial) <20>` — max 100\n\n"
+        "`,banall`\n"
+        "bans everyone in the server except u and the bot\n\n"
         "`,help`\n"
         "shows this\n"
     )
